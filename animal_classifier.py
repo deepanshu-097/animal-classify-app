@@ -36,12 +36,13 @@ class AnimalClassifier:
             logger.error(f"Error loading model: {str(e)}")
             raise Exception(f"Failed to load model: {str(e)}")
     
-    def predict(self, image):
+    def predict(self, image, debug_mode=False):
         """
         Predict the animal in the given image
         
         Args:
             image: PIL Image object
+            debug_mode: If True, includes raw ImageNet predictions for debugging
         
         Returns:
             tuple: (predicted_animal, confidence_percentage, top_predictions_list)
@@ -55,6 +56,15 @@ class AnimalClassifier:
             
             # Make prediction
             predictions = self.model.predict(processed_image, verbose=0)
+            
+            # If debug mode, get raw ImageNet predictions
+            raw_predictions = []
+            if debug_mode:
+                # Get top 10 raw ImageNet predictions for debugging
+                decoded = tf.keras.applications.imagenet_utils.decode_predictions(
+                    predictions, top=10
+                )[0]
+                raw_predictions = [(pred[1].replace('_', ' ').title(), pred[2] * 100) for pred in decoded]
             
             # Map predictions to animal names
             animal_predictions = map_imagenet_to_animals(predictions, top_k=5)
@@ -71,14 +81,24 @@ class AnimalClassifier:
                 
                 if decoded:
                     class_name = decoded[0][1].replace('_', ' ').title()
-                    return class_name, confidence, [(class_name, confidence)]
+                    if debug_mode:
+                        raw_predictions = [(pred[1].replace('_', ' ').title(), pred[2] * 100) for pred in decoded[:5]]
+                        return class_name, confidence, [(class_name, confidence)], raw_predictions
+                    else:
+                        return class_name, confidence, [(class_name, confidence)]
                 else:
-                    return None, 0, []
+                    if debug_mode:
+                        return None, 0, [], []
+                    else:
+                        return None, 0, []
             
             # Return the top prediction and all top predictions
             top_animal, top_confidence = animal_predictions[0]
             
-            return top_animal, top_confidence, animal_predictions
+            if debug_mode:
+                return top_animal, top_confidence, animal_predictions, raw_predictions
+            else:
+                return top_animal, top_confidence, animal_predictions
             
         except Exception as e:
             logger.error(f"Error during prediction: {str(e)}")

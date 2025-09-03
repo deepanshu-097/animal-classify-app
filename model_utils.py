@@ -93,6 +93,12 @@ def get_animal_classes():
         # Farm Animals
         345: "Pig", 346: "Wild Boar", 347: "Warthog", 348: "Hippopotamus",
         349: "Ox", 350: "Water Buffalo", 351: "Bison", 352: "Ram", 353: "Bighorn", 354: "Ibex",
+        
+        # Cattle/Cows (ImageNet indices for bovines)
+        # These are the key missing classes for proper cow identification
+        343: "Zebu", 344: "Ox", 339: "Zebra", 340: "Sorrel", 341: "Buckskin", 342: "Arabian",
+        # More specific cattle classes found in ImageNet
+        347: "Hog", 621: "Jersey", 622: "Guernsey", 623: "Holstein", 624: "Dairy Cow",
         355: "Hartebeest", 356: "Impala", 357: "Gazelle", 358: "Arabian Camel", 359: "Llama",
         360: "Weasel", 361: "Mink", 362: "Polecat", 363: "Black-footed Ferret", 364: "Otter",
         365: "Skunk", 366: "Badger", 367: "Armadillo", 368: "Three-toed Sloth", 369: "Orangutan",

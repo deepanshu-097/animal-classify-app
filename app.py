@@ -51,15 +51,21 @@ def main():
             
             with col1:
                 st.subheader("Uploaded Image")
-                st.image(image, caption="Your uploaded photo", use_column_width=True)
+                st.image(image, caption="Your uploaded photo", use_container_width=True)
             
             with col2:
                 st.subheader("AI Prediction")
                 
+                # Add debug mode toggle
+                debug_mode = st.checkbox("🔍 Show debug info (raw AI predictions)", help="See what the AI model actually detected before animal mapping")
+                
                 # Show loading spinner while processing
                 with st.spinner("Analyzing the image..."):
                     # Get prediction from the classifier
-                    prediction, confidence, top_predictions = classifier.predict(image)
+                    if debug_mode:
+                        prediction, confidence, top_predictions, raw_predictions = classifier.predict(image, debug_mode=True)
+                    else:
+                        prediction, confidence, top_predictions = classifier.predict(image)
                 
                 if prediction:
                     # Display main prediction
@@ -70,6 +76,14 @@ def main():
                     st.subheader("Top 3 Predictions:")
                     for i, (animal, conf) in enumerate(top_predictions[:3], 1):
                         st.write(f"{i}. {animal}: {conf:.1f}%")
+                    
+                    # Show debug information if enabled
+                    if debug_mode and 'raw_predictions' in locals():
+                        st.subheader("🔍 Debug: Raw AI Detections")
+                        st.write("**What the AI model originally detected:**")
+                        for i, (raw_class, raw_conf) in enumerate(raw_predictions[:5], 1):
+                            st.write(f"{i}. {raw_class}: {raw_conf:.1f}%")
+                        st.write("---")
                     
                     # Add confidence interpretation
                     if confidence >= 80:
