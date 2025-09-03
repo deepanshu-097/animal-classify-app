@@ -76,7 +76,14 @@ class AnimalClassifier:
                     predictions, top=20  # Check more predictions for bovine terms
                 )[0]
                 
-                bovine_keywords = ['ox', 'bull', 'cow', 'cattle', 'buffalo', 'bison', 'zebu', 'water_buffalo']
+                bovine_keywords = [
+                    'ox', 'bull', 'cow', 'cattle', 'buffalo', 'bison', 'zebu', 'water_buffalo',
+                    'bovine', 'steer', 'heifer', 'calf', 'dairy', 'beef', 'holstein', 'jersey',
+                    'angus', 'brahman', 'hereford', 'longhorn', 'shorthorn', 'highland',
+                    'yak', 'gaur', 'banteng', 'gayal', 'kouprey', 'aurochs',
+                    'cape_buffalo', 'african_buffalo', 'water_ox', 'swamp_buffalo',
+                    'carabao', 'murrah', 'nili_ravi', 'surti'
+                ]
                 
                 for pred in decoded:
                     class_name = pred[1].lower().replace('_', ' ')
@@ -85,16 +92,24 @@ class AnimalClassifier:
                     # Check if any bovine keywords are in the class name
                     for keyword in bovine_keywords:
                         if keyword in class_name:
-                            if 'buffalo' in class_name or 'bison' in class_name:
+                            if 'buffalo' in class_name or 'bison' in class_name or 'water' in class_name:
                                 result_animal = 'Buffalo'
                             else:
                                 result_animal = 'Cow'
                             
+                            # Boost confidence for clearly bovine detections
+                            boosted_confidence = min(confidence * 2.5, 95.0)  # Cap at 95%
+                            
+                            # Additional boost if multiple bovine keywords found
+                            keyword_count = sum(1 for kw in bovine_keywords if kw in class_name)
+                            if keyword_count > 1:
+                                boosted_confidence = min(boosted_confidence * 1.2, 95.0)
+                            
                             if debug_mode:
                                 raw_predictions = [(p[1].replace('_', ' ').title(), p[2] * 100) for p in decoded[:5]]
-                                return result_animal, confidence, [(result_animal, confidence)], raw_predictions
+                                return result_animal, boosted_confidence, [(result_animal, boosted_confidence)], raw_predictions
                             else:
-                                return result_animal, confidence, [(result_animal, confidence)]
+                                return result_animal, boosted_confidence, [(result_animal, boosted_confidence)]
                 
                 # If no bovine terms found, reject the image
                 if debug_mode:

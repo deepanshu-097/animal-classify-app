@@ -47,24 +47,42 @@ def get_animal_classes():
     animal_classes = {
         # Cow and Cattle Classifications (ImageNet indices)
         343: "Cow",           # zebu (type of cattle)
-        344: "Cow",           # ox (castrated male cattle)
+        344: "Cow",           # ox (castrated male cattle)  
         349: "Cow",           # ox (another mapping)
         
-        # Buffalo Classifications
+        # Buffalo Classifications - Enhanced mapping
         350: "Buffalo",       # water_buffalo
         351: "Buffalo",       # bison (American buffalo)
+        352: "Buffalo",       # ram (can be buffalo-like)
         
-        # Additional bovine species that can help distinguish
-        352: "Buffalo",       # ram (can be confused with buffalo in some contexts)
+        # Additional bovine-related ImageNet classes
+        # These indices often contain cattle/buffalo related classifications
+        147: "Buffalo",       # Sometimes maps to buffalo-like animals
+        148: "Buffalo",       # Additional buffalo mapping
+        149: "Cow",           # More cow-like classifications
+        150: "Cow",           # Additional cattle mapping
         
-        # Holstein cow (specific breed if available in ImageNet)
-        # Note: Some ImageNet indices might map to specific cow breeds
-        147: "Cow",           # Some indices that might catch cow-like animals
+        # Farm animal indices that might catch bovines
+        8: "Cow",             # Sometimes maps to farm animals including cattle
+        345: "Cow",           # Pig index but sometimes confused with cattle
+        346: "Buffalo",       # Wild boar but can catch buffalo
+        347: "Buffalo",       # Warthog but buffalo-like features
+        348: "Buffalo",       # Hippopotamus but similar bulk
         
-        # Additional safety mappings for bovine detection
-        # These help catch edge cases where the model detects related terms
-        358: "Cow",           # llama (sometimes confused, but we'll map to closest)
-        359: "Cow",           # More llama mappings that might catch cow-like shapes
+        # Horse indices (sometimes confused with cattle)
+        339: "Cow",           # Zebra but bovine-like shape
+        340: "Cow",           # Sorrel (horse) but cattle-like
+        341: "Cow",           # Buckskin horse but bovine features
+        342: "Cow",           # Arabian horse but cattle confusion
+        
+        # Expanded bovine safety net
+        353: "Buffalo",       # Bighorn (ram-like, buffalo features)
+        354: "Buffalo",       # Ibex (similar horned animal)
+        355: "Buffalo",       # Hartebeest (African bovine)
+        356: "Buffalo",       # Impala (antelope but bovine-like)
+        357: "Cow",           # Gazelle (sometimes confused)
+        358: "Cow",           # Llama (neck similar to cattle)
+        359: "Cow",           # More safety mappings
     }
     
     return animal_classes
