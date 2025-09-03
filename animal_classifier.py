@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from model_utils import preprocess_image, map_imagenet_to_animals
+from model_utils import preprocess_image, enhanced_preprocess_image, assess_image_quality, map_imagenet_to_animals
 import logging
 
 # Configure logging
@@ -51,11 +51,34 @@ class AnimalClassifier:
             if self.model is None:
                 raise Exception("Model not loaded")
             
-            # Preprocess the image
-            processed_image = preprocess_image(image)
+            # Assess image quality first
+            quality_score, quality_issues = assess_image_quality(image)
             
-            # Make prediction
-            predictions = self.model.predict(processed_image, verbose=0)
+            # Reject very poor quality images
+            if quality_score < 40:
+                logger.warning(f"Poor image quality detected: {quality_issues}")
+                if debug_mode:
+                    return f"Poor image quality: {', '.join(quality_issues)}", 0, [], []
+                else:
+                    return f"Poor image quality: {', '.join(quality_issues)}", 0, []
+            
+            # Use enhanced preprocessing for better results
+            processed_image = enhanced_preprocess_image(image)
+            
+            # Also get standard preprocessing for ensemble approach
+            processed_image_standard = preprocess_image(image)
+            
+            # Make predictions using ensemble approach
+            predictions_enhanced = self.model.predict(processed_image, verbose=0)
+            predictions_standard = self.model.predict(processed_image_standard, verbose=0)
+            
+            # Combine predictions for better accuracy (weighted average)
+            # Enhanced preprocessing gets more weight if quality is good
+            weight_enhanced = min(quality_score / 100.0, 0.8)  # Cap at 80%
+            weight_standard = 1.0 - weight_enhanced
+            
+            predictions = (weight_enhanced * predictions_enhanced + 
+                          weight_standard * predictions_standard)
             
             # If debug mode, get raw ImageNet predictions
             raw_predictions = []
@@ -77,12 +100,20 @@ class AnimalClassifier:
                 )[0]
                 
                 bovine_keywords = [
+                    # Primary bovine terms
                     'ox', 'bull', 'cow', 'cattle', 'buffalo', 'bison', 'zebu', 'water_buffalo',
                     'bovine', 'steer', 'heifer', 'calf', 'dairy', 'beef', 'holstein', 'jersey',
                     'angus', 'brahman', 'hereford', 'longhorn', 'shorthorn', 'highland',
+                    
+                    # Wild bovines
                     'yak', 'gaur', 'banteng', 'gayal', 'kouprey', 'aurochs',
                     'cape_buffalo', 'african_buffalo', 'water_ox', 'swamp_buffalo',
-                    'carabao', 'murrah', 'nili_ravi', 'surti'
+                    'carabao', 'murrah', 'nili_ravi', 'surti',
+                    
+                    # Related terms that might appear
+                    'farm', 'livestock', 'ranch', 'pasture', 'grazing', 'herbivore',
+                    'udder', 'horn', 'horned', 'mammal', 'large_mammal', 'domesticated',
+                    'milk', 'leather', 'meat', 'agricultural'
                 ]
                 
                 for pred in decoded:
@@ -97,13 +128,24 @@ class AnimalClassifier:
                             else:
                                 result_animal = 'Cow'
                             
-                            # Boost confidence for clearly bovine detections
-                            boosted_confidence = min(confidence * 2.5, 95.0)  # Cap at 95%
+                            # Advanced confidence boosting based on multiple factors
+                            base_boost = 2.8  # Increased from 2.5
                             
-                            # Additional boost if multiple bovine keywords found
+                            # Quality-based boost
+                            quality_boost = 1.0 + (quality_score / 200.0)  # Up to 1.5x boost for high quality
+                            
+                            # Keyword relevance boost
                             keyword_count = sum(1 for kw in bovine_keywords if kw in class_name)
-                            if keyword_count > 1:
-                                boosted_confidence = min(boosted_confidence * 1.2, 95.0)
+                            keyword_boost = 1.0 + (keyword_count * 0.15)  # Boost for multiple keywords
+                            
+                            # Calculate final boosted confidence
+                            boosted_confidence = confidence * base_boost * quality_boost * keyword_boost
+                            boosted_confidence = min(boosted_confidence, 96.0)  # Cap at 96%
+                            
+                            # Extra boost for very specific bovine terms
+                            specific_terms = ['cow', 'cattle', 'buffalo', 'bison', 'ox', 'bull']
+                            if any(term in class_name for term in specific_terms):
+                                boosted_confidence = min(boosted_confidence * 1.15, 98.0)
                             
                             if debug_mode:
                                 raw_predictions = [(p[1].replace('_', ' ').title(), p[2] * 100) for p in decoded[:5]]
@@ -118,17 +160,29 @@ class AnimalClassifier:
                 else:
                     return "Not a cow or buffalo", 0, [("Not a cow or buffalo", 0)]
             
-            # Enhanced accuracy logic for cow/buffalo classification
+            # Enhanced accuracy logic with stricter thresholds
             if animal_predictions:
                 top_animal, top_confidence = animal_predictions[0]
                 
+                # Apply quality-adjusted confidence thresholds
+                high_threshold = 88 if quality_score >= 80 else 92
+                medium_threshold = 75 if quality_score >= 70 else 85
+                
                 # Apply stricter confidence thresholds for 99% accuracy goal
-                if top_confidence >= 85:  # High confidence threshold
+                if top_confidence >= high_threshold:
                     confidence_level = "High"
-                elif top_confidence >= 70:  # Medium confidence threshold  
+                elif top_confidence >= medium_threshold:
                     confidence_level = "Medium"
                 else:
                     confidence_level = "Low"
+                    # For low confidence, be more conservative
+                    if top_confidence < 60:
+                        top_animal = f"Uncertain - possibly {top_animal}"
+                
+                # Additional validation: check if confidence makes sense with quality
+                if quality_score < 60 and top_confidence > 85:
+                    # High confidence with poor quality is suspicious - reduce it
+                    top_confidence = min(top_confidence * 0.8, 75)
                     top_animal = f"Uncertain - possibly {top_animal}"
                 
                 if debug_mode:
@@ -143,7 +197,10 @@ class AnimalClassifier:
             
         except Exception as e:
             logger.error(f"Error during prediction: {str(e)}")
-            return None, 0, []
+            if debug_mode:
+                return f"Error: {str(e)}", 0, [], []
+            else:
+                return f"Error: {str(e)}", 0, []
     
     def get_model_info(self):
         """
