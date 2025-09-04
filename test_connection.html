@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Animal Classify App Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        .info { background: rgba(33, 150, 243, 0.3); }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #45a049; }
+        .links {
+            margin-top: 20px;
+        }
+        .links a {
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐄 Animal Classify App - Connection Test</h1>
+        
+        <div class="status info">
+            <h3>📋 Test Instructions:</h3>
+            <p>Click the buttons below to test different ways to access your app:</p>
+        </div>
+
+        <div class="status info">
+            <h3>🔗 Try These URLs:</h3>
+            <div class="links">
+                <p><a href="http://localhost:8503" target="_blank">🌐 http://localhost:8503</a></p>
+                <p><a href="http://127.0.0.1:8503" target="_blank">🌐 http://127.0.0.1:8503</a></p>
+                <p><a href="http://localhost:8501" target="_blank">🌐 http://localhost:8501</a></p>
+                <p><a href="http://localhost:8502" target="_blank">🌐 http://localhost:8502</a></p>
+            </div>
+        </div>
+
+        <div class="status info">
+            <h3>🚀 Quick Start Options:</h3>
+            <button onclick="window.open('http://localhost:8503', '_blank')">Open App (Port 8503)</button>
+            <button onclick="window.open('http://127.0.0.1:8503', '_blank')">Open App (127.0.0.1:8503)</button>
+            <button onclick="testConnection()">Test Connection</button>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div class="status info">
+            <h3>📝 If App Doesn't Open:</h3>
+            <ol>
+                <li>Make sure the app is running in the terminal</li>
+                <li>Try different ports (8501, 8502, 8503)</li>
+                <li>Check Windows Firewall settings</li>
+                <li>Try running as administrator</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status info';
+            statusDiv.innerHTML = '🔄 Testing connection...';
+
+            const ports = [8501, 8502, 8503];
+            let workingPort = null;
+
+            for (const port of ports) {
+                try {
+                    const response = await fetch(`http://localhost:${port}`, { 
+                        method: 'HEAD',
+                        mode: 'no-cors',
+                        timeout: 3000 
+                    });
+                    workingPort = port;
+                    break;
+                } catch (error) {
+                    console.log(`Port ${port} not accessible`);
+                }
+            }
+
+            if (workingPort) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `✅ App is running on port ${workingPort}! <a href="http://localhost:${workingPort}" target="_blank" style="color: #FFD700;">Click here to open</a>`;
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ App is not accessible on any port. Please check if it\'s running.';
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            setTimeout(testConnection, 1000);
+        };
+    </script>
+</body>
+</html>
+
+

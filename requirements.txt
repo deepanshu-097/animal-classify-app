@@ -1,12 +1,12 @@
 # Animal Classify - Cow & Buffalo AI Recognition App
-# Compatible with Streamlit Cloud
+# Streamlit Cloud Compatible
 
 # Core ML and AI libraries
-tensorflow==2.15.0
+tensorflow==2.13.0
 numpy==1.24.3
 
 # Image processing (headless version for cloud deployment)
-opencv-python-headless==4.8.1.78
+opencv-python-headless==4.8.0.76
 pillow==10.0.1
 
 # Web app framework

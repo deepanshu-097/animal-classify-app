@@ -1,7 +1,14 @@
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-import cv2
+
+# Try to import OpenCV with fallback
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError:
+    print("Warning: OpenCV not available, using PIL-only image processing")
+    OPENCV_AVAILABLE = False
 
 def assess_image_quality(image):
     """
@@ -53,15 +60,22 @@ def assess_image_quality(image):
             quality_score -= 20
             quality_issues.append("Low contrast image")
         
-        # 5. Check for noise (using edge detection)
-        edges = cv2.Canny(gray, 50, 150)
-        edge_density = np.sum(edges > 0) / (height * width)
-        if edge_density > 0.3:  # Too many edges might indicate noise
-            quality_score -= 10
-            quality_issues.append("Potentially noisy image")
-        elif edge_density < 0.05:  # Too few edges might indicate poor quality
-            quality_score -= 15
-            quality_issues.append("Lack of clear features")
+        # 5. Check for noise (using edge detection if OpenCV available)
+        if OPENCV_AVAILABLE:
+            edges = cv2.Canny(gray, 50, 150)
+            edge_density = np.sum(edges > 0) / (height * width)
+            if edge_density > 0.3:  # Too many edges might indicate noise
+                quality_score -= 10
+                quality_issues.append("Potentially noisy image")
+            elif edge_density < 0.05:  # Too few edges might indicate poor quality
+                quality_score -= 15
+                quality_issues.append("Lack of clear features")
+        else:
+            # Fallback: use variance as a proxy for image quality
+            variance = np.var(gray)
+            if variance < 100:  # Low variance might indicate poor quality
+                quality_score -= 10
+                quality_issues.append("Low image variance")
         
         return max(0, quality_score), quality_issues
         
@@ -84,16 +98,23 @@ def enhanced_preprocess_image(image, target_size=(224, 224)):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Convert to numpy for OpenCV processing
+        # Convert to numpy for processing
         img_array = np.array(image)
         
-        # Apply histogram equalization for better contrast
-        img_yuv = cv2.cvtColor(img_array, cv2.COLOR_RGB2YUV)
-        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-        img_array = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
-        
-        # Apply slight gaussian blur to reduce noise
-        img_array = cv2.GaussianBlur(img_array, (3, 3), 0)
+        # Apply OpenCV enhancements if available
+        if OPENCV_AVAILABLE:
+            # Apply histogram equalization for better contrast
+            img_yuv = cv2.cvtColor(img_array, cv2.COLOR_RGB2YUV)
+            img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+            img_array = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
+            
+            # Apply slight gaussian blur to reduce noise
+            img_array = cv2.GaussianBlur(img_array, (3, 3), 0)
+        else:
+            # Fallback: simple contrast enhancement using PIL
+            from PIL import ImageEnhance
+            image = ImageEnhance.Contrast(image).enhance(1.2)
+            img_array = np.array(image)
         
         # Convert back to PIL for resizing
         image = Image.fromarray(img_array)
