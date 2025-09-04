@@ -1,0 +1,5 @@
+# Additional system packages for cloud deployment
+libgl1-mesa-glx
+libglib2.0-0
+
+

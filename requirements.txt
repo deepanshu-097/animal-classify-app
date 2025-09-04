@@ -1,0 +1,24 @@
+# Animal Classify - Cow & Buffalo AI Recognition App
+# Python 3.11+ required
+
+# Core ML and AI libraries
+tensorflow>=2.20.0
+numpy>=2.3.2
+
+# Image processing
+opencv-python>=4.11.0.86
+pillow>=11.3.0
+
+# Web app framework
+streamlit>=1.49.1
+
+# Additional dependencies that are automatically installed with the above
+# (These are included for reference but will be auto-installed)
+# altair>=4.0.0
+# pandas>=1.4.0
+# protobuf>=3.20
+# requests>=2.27
+# tornado>=6.0.3
+# watchdog>=2.1.5
+
+
